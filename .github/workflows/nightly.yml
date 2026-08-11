@@ -1,0 +1,43 @@
+name: Nightly Performance Pipeline
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  full-benchmark-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Full JMH benchmark matrix
+        # Overrides the fast "smoke" profile defined in build.gradle.kts with
+        # the real thread-count matrix from docs/benchmarks/methodology.md
+        # (1/2/4/8/16/32/64 threads, full warmup/measurement iterations).
+        # No benchmark classes exist yet — this job is a no-op until a later
+        # commit adds the first JMH benchmarks; see PERFORMANCE.md.
+        run: >
+          ./gradlew jmh
+          -Pjmh.warmupIterations=5
+          -Pjmh.iterations=10
+          -Pjmh.fork=3
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmh-results
+          path: build/results/jmh/results.json
