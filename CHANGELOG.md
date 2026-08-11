@@ -10,8 +10,7 @@ per milestone, not per commit.
 
 - Gradle build scaffolding: Java 21 toolchain, Checkstyle, SpotBugs, JaCoCo,
   JMH plugin wiring, CI (PR pipeline + nightly job).
-- Repo governance docs (README, CONTRIBUTING, SECURITY, LICENSE) and the
-  `docs/` structure.
+- Repo governance docs (README, LICENSE) and the `docs/` structure.
 - `dev.trafficcontrol.ratelimiter`: `RateLimiter` interface with four
   selectable algorithms behind `RateLimiterConfig` + `RateLimiterFactory` —
   `GcraRateLimiter` (flagship, single-`AtomicLong` CAS), `TokenBucketRateLimiter`
@@ -57,3 +56,32 @@ already reason about trade-offs qualitatively, not from benchmark data. The
 workflow's benchmark step are left in place but unused, in case a later
 milestone changes course; per AGENTS.md §7, this decision applies to this
 repo going forward and doesn't reopen automatically.
+
+### Milestone 2 — Timeout Management
+
+- `dev.trafficcontrol.timeout`: `Deadline` (reuses `NanoClock`), three
+  interchangeable `TimeoutScheduler`s (`ScheduledExecutorServiceTimeoutScheduler`,
+  `VirtualThreadTimeoutScheduler`, `HashedWheelTimeoutScheduler` — flagship,
+  hand-rolled), `TimeoutExecutor` (sync `execute` via `Future.get(timeout)`,
+  async `executeAsync` via the scheduler), `TimeoutConfig` +
+  `TimeoutExecutorFactory`.
+- Tests: a shared `TimeoutSchedulerContractTest` run against all three
+  schedulers, `Deadline` (deterministic, fake-clock), `TimeoutExecutor`
+  sync/async, and a concurrent schedule/cancel stress test for the hashed
+  wheel.
+- `docs/algorithms/timeout-management.md`, ADR-006 (Timeout Enforcement
+  Mechanism).
+
+### Scope note — documentation consolidated
+
+Per explicit decision: `CONTRIBUTING.md`, `SECURITY.md`, and `PERFORMANCE.md`
+are folded into `README.md`, and the empty `docs/{architecture,benchmarks,
+performance,security,operations}/README.md` placeholder files (and the
+`docs/algorithms/phase-2/`, `docs/adr/README.md`, `docs/algorithms/README.md`,
+`docs/design/README.md` index stubs) are removed — they had no real content
+and read as filler. ADRs, algorithm write-ups, and the two substantial
+design docs stay as separate files; those are real, dense content, not
+scaffolding. Applies to this repo going forward; `docs/instructions/task-02-
+resilience-traffic-control/03-principal-engineer-requirements-checklist.md`
+in the portfolio workspace records this as an explicit ADAPT against the
+master doc's Architecture Documentation requirement.
