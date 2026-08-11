@@ -72,16 +72,18 @@ repo going forward and doesn't reopen automatically.
 - `docs/algorithms/timeout-management.md`, ADR-006 (Timeout Enforcement
   Mechanism).
 
-### Scope note — documentation consolidated
+### Scope note — documentation consolidated into README, docs/ removed entirely
 
-Per explicit decision: `CONTRIBUTING.md`, `SECURITY.md`, and `PERFORMANCE.md`
-are folded into `README.md`, and the empty `docs/{architecture,benchmarks,
-performance,security,operations}/README.md` placeholder files (and the
-`docs/algorithms/phase-2/`, `docs/adr/README.md`, `docs/algorithms/README.md`,
-`docs/design/README.md` index stubs) are removed — they had no real content
-and read as filler. ADRs, algorithm write-ups, and the two substantial
-design docs stay as separate files; those are real, dense content, not
-scaffolding. Applies to this repo going forward; `docs/instructions/task-02-
-resilience-traffic-control/03-principal-engineer-requirements-checklist.md`
-in the portfolio workspace records this as an explicit ADAPT against the
-master doc's Architecture Documentation requirement.
+Per explicit decision (revised twice in the same session): first the empty
+`docs/{architecture,benchmarks,performance,security,operations}/README.md`
+stubs and index files were removed as filler with no real content. Then,
+on further instruction, the whole `docs/` tree — including the real ADRs
+and algorithm/design write-ups — was removed too, and `CONTRIBUTING.md`/
+`SECURITY.md`/`PERFORMANCE.md` were dropped rather than folded in.
+`README.md` is now the only documentation file besides `LICENSE` and this
+changelog; it covers what/why, usage, build/test, what CI actually does,
+containerization (deliberately absent — this is a library), and
+contributing, in prose. `principal-engineer-portfolio.md`'s Architecture
+Documentation and ADR requirements were revised to match (a single detailed
+README instead of a docs/ tree and formal ADR files) — applies portfolio-
+wide going forward, not just this repo.
