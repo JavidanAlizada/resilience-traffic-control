@@ -41,9 +41,19 @@ not a fit for this milestone's actual scope. See
 docs/design/configuration-and-extensibility.md, "Patterns considered and
 dropped for this milestone."
 
-### Still open for Milestone 1
+**Milestone 1 is otherwise complete.**
 
-JMH benchmark suite (per-call overhead, throughput/p50/p95/p99, allocation
-rate vs. Guava/Resilience4j baselines) — see
-`docs/instructions/task-02-resilience-traffic-control/` in the portfolio
-workspace for what's tracked.
+### Scope note — JMH benchmarking dropped, not deferred
+
+Per explicit decision, JMH benchmarking is no longer a mandatory
+requirement for this project — matching
+[concurrent-collections-lock-free](https://github.com/JavidanAlizada/concurrent-collections-lock-free)'s
+own precedent (that project dropped it entirely for the same reason:
+correctness and design work first, performance claims only when there's a
+concrete need for them). No throughput/latency/allocation numbers are
+claimed anywhere in this project's docs as a result — ADR-002 and ADR-003
+already reason about trade-offs qualitatively, not from benchmark data. The
+`me.champeau.jmh` plugin wiring in `build.gradle.kts` and the nightly
+workflow's benchmark step are left in place but unused, in case a later
+milestone changes course; per AGENTS.md §7, this decision applies to this
+repo going forward and doesn't reopen automatically.
