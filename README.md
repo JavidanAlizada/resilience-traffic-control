@@ -30,23 +30,31 @@ interchangeable algorithms selected through `RateLimiterConfig`:
 | Fixed Window | Naive baseline, kept to demonstrate its own boundary-burst flaw. |
 
 ```java
-RateLimiterConfig config = RateLimiterConfig.builder()
-    .algorithm(RateLimiterAlgorithm.GCRA)
-    .permitsPerSecond(100)
-    .burstCapacity(20)
-    .build();
-RateLimiter limiter = RateLimiterFactory.create(config);
+RateLimiter limiter = RateLimiters.gcra(100, 20); // 100/sec, burst of 20
 
 if (limiter.tryAcquire()) {
     // handle the request
 }
 ```
 
+Or the full builder for anything the `RateLimiters` shortcuts don't cover:
+
+```java
+RateLimiter limiter = RateLimiterFactory.create(RateLimiterConfig.builder()
+    .algorithm(RateLimiterAlgorithm.GCRA)
+    .permitsPerSecond(100)
+    .burstCapacity(20)
+    .build());
+```
+
 Design patterns used deliberately, not decoratively — see
 [docs/design/configuration-and-extensibility.md](docs/design/configuration-and-extensibility.md):
 Strategy (`RateLimiter` + its four implementations, `NanoClock`), Template
 Method (`AbstractWindowRateLimiter`), Builder (`RateLimiterConfig.Builder`),
-Factory Method (`RateLimiterFactory`).
+Factory Method (`RateLimiterFactory`), Decorator + Observer
+(`ObservableRateLimiter` + `RateLimiterListener`), Composite
+(`CompositeRateLimiter`), Null Object (`NoOpRateLimiter`), and Facade
+(`RateLimiters`).
 
 ## Build & test
 

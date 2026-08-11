@@ -75,6 +75,62 @@ depends only on `RateLimiterConfig` and `RateLimiter`. Concrete
 implementation constructors are package-private specifically to keep this
 factory as the single seam (see ADR-009).
 
+### Decorator + Observer — `ObservableRateLimiter` + `RateLimiterListener`
+
+```java
+RateLimiter observed = new ObservableRateLimiter(delegate)
+    .addListener(myMetricsListener);
+```
+
+`ObservableRateLimiter` wraps any `RateLimiter` and reports every
+admit/reject to registered `RateLimiterListener`s — Decorator for the
+wrapping-and-delegating structure, Observer for the listener-registration
+protocol. Neither of the four algorithm classes has to know listeners
+exist; this is exactly the seam ADR-010's metrics SPI was always going to
+need, arriving a little earlier than planned because it's genuinely useful
+on its own. Listeners live in a `CopyOnWriteArrayList` — registered once at
+setup, read on every hot-path call, which is the textbook case for it.
+`CountingRateLimiterListener` is the one concrete listener shipped here —
+a thread-safe admitted/rejected tally — so the SPI isn't only ever
+implemented by test doubles.
+
+### Composite — `CompositeRateLimiter`
+
+```java
+RateLimiter perUserAndGlobal = RateLimiters.allOf(perUserLimiter, globalLimiter);
+```
+
+Tiered limiting ("100/sec per user AND 1000/sec globally") is an
+AND-composition of several `RateLimiter`s behind one more. Composite is the
+honest name for that — not Chain of Responsibility, which is about
+delegating to whichever handler claims the request, a different contract
+than "everyone must agree." The one real cost of this pattern here — a
+later child's rejection doesn't undo an earlier child's already-spent
+permit — is documented on the class itself rather than hidden, since
+Milestone 1's `tryAcquire` has no reserve/commit step to make the
+composition atomic with.
+
+### Null Object — `NoOpRateLimiter`
+
+```java
+RateLimiter limiter = disabled ? RateLimiters.unlimited() : RateLimiters.gcra(rate, burst);
+```
+
+"Rate limiting is off in this environment" becomes a config choice instead
+of `if (limiter != null)` scattered through every caller. The class itself
+stays package-private — nothing outside this package should construct it
+directly, only ask `RateLimiters` for it.
+
+### Facade — `RateLimiters`
+
+One small class fronting Factory Method, Builder, Composite, Null Object,
+and the Decorator/Observer pair, so the common cases are a single static
+call and the full `RateLimiterConfig.builder()` ceremony is still there for
+anything a shortcut doesn't cover. This is what turns "four algorithms
+behind an interface" into something that reads like a framework's front
+door instead of an internal implementation detail a caller has to assemble
+by hand.
+
 ## What's explicitly deferred to Milestone 5
 
 - A `RateLimiterRegistry` — named instances, a shared default config with

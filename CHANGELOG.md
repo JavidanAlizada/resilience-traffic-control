@@ -29,6 +29,20 @@ per milestone, not per commit.
 - ADR-002 (Clock Abstraction), ADR-003 (GCRA vs. Token Bucket), ADR-009
   (Algorithm Selection via Strategy Pattern), ADR-012 (AtomicLong over
   VarHandle).
+- `AbstractRateLimiter` — shared permit validation, replacing three copies
+  of the same check.
+- `ObservableRateLimiter` + `RateLimiterListener` (Decorator + Observer):
+  wraps any `RateLimiter`, reports every admit/reject to listeners.
+  `CountingRateLimiterListener` ships as the one concrete listener, so the
+  SPI isn't only ever implemented by tests.
+- `CompositeRateLimiter` (Composite): AND-composition of several limiters
+  for tiered rate limiting, with the non-atomicity-across-children caveat
+  documented on the class.
+- `NoOpRateLimiter` (Null Object): always-admit limiter for turning rate
+  limiting off via config.
+- `RateLimiters` (Facade): one-line entry points for the common cases,
+  tying Factory Method, Builder, Composite, Null Object, and
+  Decorator/Observer together.
 
 ### Still open for Milestone 1
 
