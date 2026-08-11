@@ -1,10 +1,6 @@
 package dev.trafficcontrol.ratelimiter;
 
-/**
- * Seam for monotonic time, so every algorithm in this package can be driven
- * by a fake clock in tests instead of {@code Thread.sleep}. {@link #SYSTEM}
- * is the production strategy; tests supply their own.
- */
+/** Monotonic time source, swappable so tests don't have to sleep for real. */
 @FunctionalInterface
 public interface NanoClock {
 

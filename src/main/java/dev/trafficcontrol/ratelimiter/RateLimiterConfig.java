@@ -3,18 +3,12 @@ package dev.trafficcontrol.ratelimiter;
 import java.util.Objects;
 
 /**
- * Immutable, validated configuration for a {@link RateLimiter}. Built
- * through {@link Builder} so an invalid combination fails at construction
- * time, not on the first {@code tryAcquire} call deep in a request path.
+ * Immutable, validated settings for a {@link RateLimiter} — invalid values
+ * fail in {@link Builder#build()}, not on the first live request.
  *
- * <p>{@code burstCapacity} means different things depending on
- * {@code algorithm}: for {@link RateLimiterAlgorithm#GCRA} and
- * {@link RateLimiterAlgorithm#TOKEN_BUCKET} it's the classic token-bucket
- * burst allowance. {@link RateLimiterAlgorithm#FIXED_WINDOW} and
- * {@link RateLimiterAlgorithm#SLIDING_WINDOW_COUNTER} use a fixed
- * one-second window with {@code permitsPerSecond} (rounded) as the
- * per-window limit and ignore {@code burstCapacity} — window algorithms
- * have no burst concept distinct from the window limit itself.
+ * <p>Note: {@code burstCapacity} only means something for GCRA and
+ * TOKEN_BUCKET (the classic burst allowance). The window algorithms use a
+ * fixed one-second window sized by {@code permitsPerSecond} and ignore it.
  */
 public final class RateLimiterConfig {
 
@@ -50,7 +44,7 @@ public final class RateLimiterConfig {
         return new Builder();
     }
 
-    /** Validating builder — see class-level docs for what gets checked. */
+    /** Fails fast on bad input instead of letting a broken config reach production. */
     public static final class Builder {
 
         private RateLimiterAlgorithm algorithm = RateLimiterAlgorithm.GCRA;

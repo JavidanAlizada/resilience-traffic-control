@@ -1,12 +1,6 @@
 package dev.trafficcontrol.ratelimiter;
 
-/**
- * Factory Method: maps {@link RateLimiterConfig#algorithm()} to the
- * matching concrete {@link RateLimiter}. This is the one place that knows
- * about the concrete implementation classes — everything else in this
- * package (and every caller) depends only on the {@link RateLimiter}
- * interface.
- */
+/** Turns a config's algorithm choice into a concrete {@link RateLimiter}. */
 public final class RateLimiterFactory {
 
     private RateLimiterFactory() {

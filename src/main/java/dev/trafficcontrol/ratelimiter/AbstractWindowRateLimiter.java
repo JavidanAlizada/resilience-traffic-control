@@ -3,20 +3,12 @@ package dev.trafficcontrol.ratelimiter;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Template Method base for the two window-based algorithms
- * ({@link FixedWindowRateLimiter}, {@link SlidingWindowCounterRateLimiter}).
- * Both are "count requests within a rolling one-second window" — they only
- * differ in how much weight the previous window's count still carries, so
- * that's the one step left abstract.
- *
- * <p>State is an immutable {@link WindowState} snapshot swapped via CAS on
- * an {@link AtomicReference}. Unlike {@link GcraRateLimiter} and
- * {@link TokenBucketRateLimiter}, this allocates a new snapshot on every
- * contended attempt — an explicit, documented trade-off (see doc 02,
- * Section 3b): fine here, since the point of these two algorithms is the
- * window-boundary/blending behavior, not the packing technique.
+ * Shared rollover logic for the two window-based algorithms — both are
+ * "count requests in a rolling one-second window," they just disagree on
+ * how much of the previous window still counts, which is the one method
+ * left abstract. See docs/algorithms/sliding-window-rate-limiter.md.
  */
-abstract class AbstractWindowRateLimiter implements RateLimiter {
+abstract class AbstractWindowRateLimiter extends AbstractRateLimiter {
 
     private static final long WINDOW_SIZE_NANOS = 1_000_000_000L;
 
@@ -32,9 +24,7 @@ abstract class AbstractWindowRateLimiter implements RateLimiter {
 
     @Override
     public final boolean tryAcquire(int permits) {
-        if (permits < 1) {
-            throw new IllegalArgumentException("permits must be >= 1, was " + permits);
-        }
+        requireValidPermits(permits);
         while (true) {
             WindowState old = state.get();
             long now = clock.nanoTime();
@@ -48,8 +38,7 @@ abstract class AbstractWindowRateLimiter implements RateLimiter {
             WindowState next = admit ? candidate.withAdditionalCount(permits) : candidate;
 
             if (next == old) {
-                // no rollover happened and nothing to admit — nothing to publish
-                return false;
+                return false; // nothing rolled over and nothing to admit — nothing to publish
             }
             if (state.compareAndSet(old, next)) {
                 return admit;
@@ -58,19 +47,14 @@ abstract class AbstractWindowRateLimiter implements RateLimiter {
         }
     }
 
-    /**
-     * The one varying step: given the previous window's count, the current
-     * window's count so far, and how far into the current window {@code now}
-     * falls (0.0 = just started, close to 1.0 = about to roll), return the
-     * estimated request count to compare against the window limit.
-     */
+    /** The one varying step: how much of {@code previousCount} still counts at this point in the window. */
     abstract long estimatedCount(long previousCount, long currentCount, double windowProgress);
 
     private static WindowState rollWindow(WindowState old, long now) {
         long elapsed = now - old.windowStartNanos();
         if (elapsed < WINDOW_SIZE_NANOS) {
-            // still the current window (elapsed < 0 means the clock went
-            // backward; treat that the same as "no time has passed")
+            // still the current window; a negative elapsed (clock went backward)
+            // is treated the same as "no time has passed"
             return old;
         }
         long windowsElapsed = elapsed / WINDOW_SIZE_NANOS;
@@ -78,8 +62,7 @@ abstract class AbstractWindowRateLimiter implements RateLimiter {
         if (windowsElapsed == 1) {
             return new WindowState(newWindowStart, old.currentCount(), 0);
         }
-        // gap spanning more than one window — the "previous" window is stale too
-        return new WindowState(newWindowStart, 0, 0);
+        return new WindowState(newWindowStart, 0, 0); // idle gap — the "previous" window is stale too
     }
 
     private static double clampToUnitInterval(double value) {

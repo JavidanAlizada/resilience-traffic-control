@@ -1,12 +1,11 @@
 package dev.trafficcontrol.ratelimiter;
 
 /**
- * Approximate, O(1)-memory rate limiter: weights the previous window's
- * count by how much of it still falls inside a one-window lookback from
- * now, instead of discarding it outright at the boundary like
- * {@link FixedWindowRateLimiter}. Assumes requests were spread uniformly
- * across the previous window — an approximation, not an exact sliding-log,
- * but the same one most production API gateways actually run.
+ * Weights the previous window's count by how much of it still overlaps a
+ * one-window lookback, instead of dropping it at the boundary like
+ * {@link FixedWindowRateLimiter} does. Assumes requests were spread evenly
+ * across that window — an approximation, but the one most API gateways
+ * actually run.
  */
 final class SlidingWindowCounterRateLimiter extends AbstractWindowRateLimiter {
 

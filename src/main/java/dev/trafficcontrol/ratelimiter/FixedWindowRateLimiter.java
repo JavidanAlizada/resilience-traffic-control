@@ -1,12 +1,10 @@
 package dev.trafficcontrol.ratelimiter;
 
 /**
- * Naive baseline: one counter reset every window boundary. Deliberately
- * kept, not to be reached for — see docs/algorithms/sliding-window-rate-limiter.md
- * for the boundary-burst flaw this demonstrates: up to 2x the configured
- * rate can be admitted in a short span straddling a window boundary,
- * because the previous window's count is discarded outright instead of
- * blended in.
+ * One counter, reset every window boundary — kept on purpose to show its
+ * own flaw: a burst straddling a boundary can slip through at up to 2x the
+ * configured rate. Don't reach for this one; see
+ * docs/algorithms/sliding-window-rate-limiter.md.
  */
 final class FixedWindowRateLimiter extends AbstractWindowRateLimiter {
 
