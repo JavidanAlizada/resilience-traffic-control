@@ -7,7 +7,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Baseline: hands scheduling off to the JDK's own {@code ScheduledThreadPoolExecutor}
+ * Baseline: hands scheduling off to the JDK's own ScheduledThreadPoolExecutor
  * (a DelayQueue/heap under the hood -- O(log n) to schedule or cancel).
  */
 public final class ScheduledExecutorServiceTimeoutScheduler implements TimeoutScheduler {

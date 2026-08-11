@@ -16,9 +16,9 @@ import java.util.concurrent.locks.LockSupport;
  * needs, at the cost of firing precision bounded by one tick duration --
  * a known, accepted trade-off for timer wheels, not a bug.
  *
- * <p>This one doesn't go through {@code NanoClock}: the tick thread's
- * sleeping is real wall-clock time no matter what abstraction sits on top
- * of it, so injecting a fake clock here wouldn't make it any more testable.
+ * This one doesn't go through NanoClock: the tick thread's sleeping is
+ * real wall-clock time no matter what abstraction sits on top of it, so
+ * injecting a fake clock here wouldn't make it any more testable.
  */
 public final class HashedWheelTimeoutScheduler implements TimeoutScheduler {
 
@@ -106,12 +106,11 @@ public final class HashedWheelTimeoutScheduler implements TimeoutScheduler {
     }
 
     /**
-     * {@code rounds} is only ever touched by the single tick thread: the
-     * initial value is published safely via the bucket's {@code
-     * ConcurrentLinkedQueue.add}, and nothing else reads or writes it after
-     * that, so it doesn't need to be volatile. {@code cancelled} genuinely
-     * crosses threads (a producer thread cancels, the tick thread reads
-     * it), so that one does.
+     * rounds is only ever touched by the single tick thread: the initial
+     * value is published safely via the bucket's ConcurrentLinkedQueue.add,
+     * and nothing else reads or writes it after that, so it doesn't need
+     * to be volatile. cancelled genuinely crosses threads (a producer
+     * thread cancels, the tick thread reads it), so that one does.
      */
     private static final class TimerTask {
         final Runnable action;

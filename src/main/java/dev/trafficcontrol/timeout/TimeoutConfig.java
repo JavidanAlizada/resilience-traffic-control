@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Immutable, validated settings for a {@link TimeoutExecutor}. */
+/** Immutable, validated settings for a TimeoutExecutor. */
 public final class TimeoutConfig {
 
     private final TimeoutAlgorithm algorithm;
@@ -40,7 +40,7 @@ public final class TimeoutConfig {
             return this;
         }
 
-        /** Where synchronous {@code execute} calls actually run. Defaults to a virtual-thread-per-task executor. */
+        /** Where synchronous execute calls actually run. Defaults to a virtual-thread-per-task executor. */
         public Builder syncWorkerExecutor(ExecutorService syncWorkerExecutor) {
             this.syncWorkerExecutor = Objects.requireNonNull(syncWorkerExecutor, "syncWorkerExecutor");
             return this;

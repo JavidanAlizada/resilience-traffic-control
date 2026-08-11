@@ -1,6 +1,6 @@
 package dev.trafficcontrol.timeout;
 
-/** Turns a config's algorithm choice into a wired-up {@link TimeoutExecutor}. */
+/** Turns a config's algorithm choice into a wired-up TimeoutExecutor. */
 public final class TimeoutExecutorFactory {
 
     private TimeoutExecutorFactory() {

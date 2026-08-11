@@ -14,9 +14,9 @@ import java.util.function.Supplier;
 /**
  * Bounds how long a call is allowed to take. Sync and async go through
  * genuinely different mechanisms, not an accident: a sync call already has
- * a thread blocked waiting for it ({@code Future.get(timeout)} is enough),
- * while async needs an active {@link TimeoutScheduler} since nothing is
- * parked waiting to notice the deadline passed.
+ * a thread blocked waiting for it (Future.get(timeout) is enough), while
+ * async needs an active TimeoutScheduler since nothing is parked waiting
+ * to notice the deadline passed.
  */
 public final class TimeoutExecutor implements AutoCloseable {
 
@@ -28,7 +28,7 @@ public final class TimeoutExecutor implements AutoCloseable {
         this.syncWorkerExecutor = Objects.requireNonNull(syncWorkerExecutor, "syncWorkerExecutor");
     }
 
-    /** Runs {@code call} on the worker executor; cancels (best-effort) and throws if it outruns {@code timeout}. */
+    /** Runs call on the worker executor; cancels (best-effort) and throws if it outruns timeout. */
     public <T> T execute(Duration timeout, Callable<T> call)
             throws ExecutionException, InterruptedException, TimeoutException {
         Future<T> future = syncWorkerExecutor.submit(call);
@@ -45,7 +45,7 @@ public final class TimeoutExecutor implements AutoCloseable {
         return execute(deadline.remaining(), call);
     }
 
-    /** Starts {@code call} immediately; a timeout that fires first completes the future exceptionally. */
+    /** Starts call immediately; a timeout that fires first completes the future exceptionally. */
     public <T> CompletableFuture<T> executeAsync(Duration timeout, Supplier<CompletableFuture<T>> call) {
         CompletableFuture<T> future = call.get();
         Cancellable scheduled = scheduler.scheduleTimeout(timeout.toNanos(),
@@ -60,9 +60,9 @@ public final class TimeoutExecutor implements AutoCloseable {
 
     /**
      * Releases the scheduler's background resources. Doesn't touch
-     * {@code syncWorkerExecutor} -- that one's lifecycle belongs to
-     * whoever supplied it (possibly a shared, caller-owned pool), not to
-     * this class.
+     * syncWorkerExecutor -- that one's lifecycle belongs to whoever
+     * supplied it (possibly a shared, caller-owned pool), not to this
+     * class.
      */
     @Override
     public void close() {

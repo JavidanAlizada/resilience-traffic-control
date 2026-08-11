@@ -9,10 +9,10 @@ import java.util.concurrent.TimeUnit;
  * M:N onto carrier threads) that it's worth having as a real option, not
  * just a curiosity.
  *
- * <p>Cancellation races the firing the same way {@code Future.cancel} does
- * on an already-running task: if {@code cancel()} lands after the sleep has
- * already woken up, the timeout may still fire. Best-effort, not a
- * guarantee -- same posture as the other two schedulers.
+ * Cancellation races the firing the same way Future.cancel does on an
+ * already-running task: if cancel() lands after the sleep has already
+ * woken up, the timeout may still fire. Best-effort, not a guarantee --
+ * same posture as the other two schedulers.
  */
 public final class VirtualThreadTimeoutScheduler implements TimeoutScheduler {
 

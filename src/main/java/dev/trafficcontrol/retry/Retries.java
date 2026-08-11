@@ -2,7 +2,7 @@ package dev.trafficcontrol.retry;
 
 import java.time.Duration;
 
-/** Front door for this package, same shape as {@code RateLimiters} and covering the common cases in one line. */
+/** Front door for this package, same shape as RateLimiters and covering the common cases in one line. */
 public final class Retries {
 
     private Retries() {

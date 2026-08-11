@@ -3,12 +3,12 @@ package dev.trafficcontrol.ratelimiter;
 import java.util.Objects;
 
 /**
- * Immutable, validated settings for a {@link RateLimiter} — invalid values
- * fail in {@link Builder#build()}, not on the first live request.
+ * Immutable, validated settings for a RateLimiter — invalid values fail in
+ * build(), not on the first live request.
  *
- * <p>Note: {@code burstCapacity} only means something for GCRA and
- * TOKEN_BUCKET (the classic burst allowance). The window algorithms use a
- * fixed one-second window sized by {@code permitsPerSecond} and ignore it.
+ * Note: burstCapacity only means something for GCRA and TOKEN_BUCKET (the
+ * classic burst allowance). The window algorithms use a fixed one-second
+ * window sized by permitsPerSecond and ignore it.
  */
 public final class RateLimiterConfig {
 

@@ -1,6 +1,6 @@
 package dev.trafficcontrol.retry;
 
-/** Turns a {@link RetryConfig} into a wired-up {@link RetryExecutor}. */
+/** Turns a RetryConfig into a wired-up RetryExecutor. */
 public final class RetryExecutorFactory {
 
     private RetryExecutorFactory() {

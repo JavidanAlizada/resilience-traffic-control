@@ -3,7 +3,7 @@ package dev.trafficcontrol.ratelimiter;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * GCRA rate limiter. All the state lives in one {@code AtomicLong} — the
+ * GCRA rate limiter. All the state lives in one AtomicLong — the
  * "theoretical arrival time" — which is what lets admission be a single
  * CAS loop with nothing to pack, unlike a token bucket's separate
  * tokens/timestamp fields.

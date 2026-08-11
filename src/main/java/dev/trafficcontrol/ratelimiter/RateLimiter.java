@@ -2,7 +2,7 @@ package dev.trafficcontrol.ratelimiter;
 
 /**
  * A rate limiter admits or rejects a request, never blocks or queues one.
- * Build one through {@link RateLimiters} rather than a concrete class.
+ * Build one through RateLimiters rather than a concrete class.
  */
 public interface RateLimiter {
 
@@ -10,6 +10,6 @@ public interface RateLimiter {
         return tryAcquire(1);
     }
 
-    /** @param permits cost of this request, at least 1 */
+    /** permits is the cost of this request, at least 1. */
     boolean tryAcquire(int permits);
 }

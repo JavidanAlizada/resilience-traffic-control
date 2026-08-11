@@ -3,11 +3,11 @@ package dev.trafficcontrol.ratelimiter;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Classic token bucket, packed into one {@code AtomicLong} (tokens in the
- * high 32 bits, last-refill millis in the low 32) so it stays a one-CAS
- * design like {@link GcraRateLimiter}. This is the "why not just do this"
- * comparison baseline — millisecond, not nanosecond, precision is the
- * price of packing two fields into one word; GCRA needs no packing at all.
+ * Classic token bucket, packed into one AtomicLong (tokens in the high 32
+ * bits, last-refill millis in the low 32) so it stays a one-CAS design
+ * like GcraRateLimiter. This is the "why not just do this" comparison
+ * baseline — millisecond, not nanosecond, precision is the price of
+ * packing two fields into one word; GCRA needs no packing at all.
  */
 final class TokenBucketRateLimiter extends AbstractRateLimiter {
 

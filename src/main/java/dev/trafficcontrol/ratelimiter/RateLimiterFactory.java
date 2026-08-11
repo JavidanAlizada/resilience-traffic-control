@@ -1,6 +1,6 @@
 package dev.trafficcontrol.ratelimiter;
 
-/** Turns a config's algorithm choice into a concrete {@link RateLimiter}. */
+/** Turns a config's algorithm choice into a concrete RateLimiter. */
 public final class RateLimiterFactory {
 
     private RateLimiterFactory() {

@@ -7,10 +7,10 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
- * Immutable, validated settings for a {@link RetryExecutor}. The
- * {@code scheduler} is the same {@link TimeoutScheduler} Milestone 2
- * built -- async retry needs exactly the "run this later, cancellable"
- * capability a timeout does, so it's reused rather than rebuilt.
+ * Immutable, validated settings for a RetryExecutor. The scheduler is the
+ * same TimeoutScheduler Milestone 2 built -- async retry needs exactly
+ * the "run this later, cancellable" capability a timeout does, so it's
+ * reused rather than rebuilt.
  */
 public final class RetryConfig {
 

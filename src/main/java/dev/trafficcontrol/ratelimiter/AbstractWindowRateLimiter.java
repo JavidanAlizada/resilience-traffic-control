@@ -47,7 +47,7 @@ abstract class AbstractWindowRateLimiter extends AbstractRateLimiter {
         }
     }
 
-    /** The one varying step: how much of {@code previousCount} still counts at this point in the window. */
+    /** The one varying step: how much of previousCount still counts at this point in the window. */
     abstract long estimatedCount(long previousCount, long currentCount, double windowProgress);
 
     private static WindowState rollWindow(WindowState old, long now) {

@@ -7,8 +7,8 @@ import java.util.Objects;
 /**
  * A time budget that shrinks as it's passed along. Hand one of these
  * through a call chain instead of a fixed duration, and each hop reads
- * {@link #remaining()} at its own point in time instead of getting a fresh
- * timeout that ignores how long the earlier hops already took.
+ * remaining() at its own point in time instead of getting a fresh timeout
+ * that ignores how long the earlier hops already took.
  */
 public final class Deadline {
 

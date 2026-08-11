@@ -12,14 +12,13 @@ import java.util.function.Supplier;
 
 /**
  * Decorates a call with retry behavior -- the same shape as the reference
- * {@code Retry<T> implements BusinessOperation<T>} pattern, just split
- * into a sync and an async path.
+ * Retry-implements-BusinessOperation pattern, just split into a sync and
+ * an async path.
  *
- * <p>{@link #close()} closes the configured {@link RetryConfig#scheduler()}.
- * If that scheduler was supplied by the caller (rather than defaulted) and
- * is still needed elsewhere, don't close this executor -- build a
- * dedicated scheduler for it instead, same posture as
- * {@code TimeoutExecutor}.
+ * close() closes the configured scheduler. If that scheduler was supplied
+ * by the caller (rather than defaulted) and is still needed elsewhere,
+ * don't close this executor -- build a dedicated scheduler for it
+ * instead, same posture as TimeoutExecutor.
  */
 public final class RetryExecutor implements AutoCloseable {
 
@@ -54,7 +53,7 @@ public final class RetryExecutor implements AutoCloseable {
         }
     }
 
-    /** Non-blocking: the next attempt is scheduled via {@link RetryConfig#scheduler()}, not slept on a thread. */
+    /** Non-blocking: the next attempt is scheduled via the configured scheduler, not slept on a thread. */
     public <T> CompletableFuture<T> executeAsync(Supplier<CompletableFuture<T>> call) {
         CompletableFuture<T> result = new CompletableFuture<>();
         attemptAsync(call, result, 1, null, new ArrayList<>());

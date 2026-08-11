@@ -3,7 +3,7 @@ package dev.trafficcontrol.ratelimiter;
 /**
  * Weights the previous window's count by how much of it still overlaps a
  * one-window lookback, instead of dropping it at the boundary like
- * {@link FixedWindowRateLimiter} does. Assumes requests were spread evenly
+ * FixedWindowRateLimiter does. Assumes requests were spread evenly
  * across that window — an approximation, but the one most API gateways
  * actually run.
  */

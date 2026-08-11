@@ -2,7 +2,7 @@ package dev.trafficcontrol.ratelimiter;
 
 /**
  * Front door for this package. Covers the common cases in one line;
- * {@link RateLimiterConfig#builder()} is still there for anything these
+ * RateLimiterConfig.builder() is still there for anything these
  * shortcuts don't cover.
  */
 public final class RateLimiters {
@@ -30,7 +30,7 @@ public final class RateLimiters {
         return of(configFor(RateLimiterAlgorithm.SLIDING_WINDOW_COUNTER, permitsPerSecond, 1));
     }
 
-    /** Rate limiting turned off — see {@link NoOpRateLimiter}. */
+    /** Rate limiting turned off. */
     public static RateLimiter unlimited() {
         return NoOpRateLimiter.INSTANCE;
     }

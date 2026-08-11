@@ -4,10 +4,10 @@ import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * AWS's decorrelated jitter: {@code random(baseDelay, previousDelay * 3)}, capped at
- * {@code maxDelay}. Needs the previous delay as input, not just the attempt count, so it
- * doesn't fit {@link AbstractExponentialBackoff}'s shape -- implements {@link BackoffStrategy}
- * directly instead.
+ * AWS's decorrelated jitter: random(baseDelay, previousDelay * 3), capped
+ * at maxDelay. Needs the previous delay as input, not just the attempt
+ * count, so it doesn't fit AbstractExponentialBackoff's shape --
+ * implements BackoffStrategy directly instead.
  */
 public final class DecorrelatedJitterBackoff implements BackoffStrategy {
 
