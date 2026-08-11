@@ -14,12 +14,11 @@ import java.util.concurrent.locks.LockSupport;
  * thread advancing a tick and firing whatever's due. O(1) to schedule
  * (append to a bucket) instead of the O(log n) a heap-based scheduler
  * needs, at the cost of firing precision bounded by one tick duration --
- * see docs/algorithms/timeout-management.md for the full trade-off.
+ * a known, accepted trade-off for timer wheels, not a bug.
  *
  * <p>This one doesn't go through {@code NanoClock}: the tick thread's
  * sleeping is real wall-clock time no matter what abstraction sits on top
- * of it, so injecting a fake clock here wouldn't make it any more testable
- * -- see Milestone 2's proposal doc, Decision K.
+ * of it, so injecting a fake clock here wouldn't make it any more testable.
  */
 public final class HashedWheelTimeoutScheduler implements TimeoutScheduler {
 

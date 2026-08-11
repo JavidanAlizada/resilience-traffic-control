@@ -1,9 +1,6 @@
 package dev.trafficcontrol.ratelimiter;
 
-/**
- * Admission algorithms selectable through {@link RateLimiterConfig}. See
- * docs/algorithms/ for the correctness and memory-model writeup of each.
- */
+/** Admission algorithms selectable through {@link RateLimiterConfig}. */
 public enum RateLimiterAlgorithm {
 
     /** Naive baseline. Kept to demonstrate its own window-boundary burst flaw. */

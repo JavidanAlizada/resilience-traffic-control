@@ -9,12 +9,10 @@ configurable, instead of hidden behind someone else's library.
 
 **Scope**: four mechanisms built to a genuinely configurable,
 professional-framework bar — Rate Limiter, Timeout Management, Retry
-Engine, Circuit Breaker — rather than eight built shallowly. See
-[CHANGELOG.md](CHANGELOG.md) for what's actually landed, and
-`docs/instructions/task-02-resilience-traffic-control/` in the portfolio
-workspace for the full scope decision (Backpressure, Failover, Bulkhead
-Isolation, and Adaptive Concurrency Control are documented there as
-deferred, not built).
+Engine, Circuit Breaker — rather than eight built shallowly. No JMH
+benchmarking is done in this project — a deliberate scope decision, not a
+gap; correctness and design work come first. See [CHANGELOG.md](CHANGELOG.md)
+for what's actually landed.
 
 ## Rate Limiter
 
@@ -52,12 +50,11 @@ Three interchangeable `TimeoutScheduler`s back the async path: the JDK's
 `ScheduledThreadPoolExecutor`, one virtual thread per pending timeout, and
 a hand-rolled hashed wheel timer (the flagship — O(1) scheduling).
 
-Design patterns are used deliberately, not decoratively — Strategy
+Design patterns are used deliberately, not decoratively: Strategy
 (`RateLimiter`/`TimeoutScheduler` and their implementations, `NanoClock`),
 Template Method (`AbstractWindowRateLimiter`), Builder (`*Config.Builder`),
 Factory Method (`RateLimiterFactory`/`TimeoutExecutorFactory`), Null Object
-(`NoOpRateLimiter`), and Facade (`RateLimiters`). See
-[docs/design/configuration-and-extensibility.md](docs/design/configuration-and-extensibility.md).
+(`NoOpRateLimiter`), and Facade (`RateLimiters`).
 
 ## Build & test
 
@@ -75,8 +72,8 @@ Requires JDK 21.
 concurrent tests, Checkstyle + SpotBugs, JaCoCo coverage, packaging
 (`jar`/`sourcesJar`), and a GitHub dependency-vulnerability review.
 `nightly.yml` is scheduled infrastructure for a full JMH benchmark matrix —
-currently a no-op, since this project doesn't do JMH benchmarking (see
-Performance below); left wired in case that changes.
+currently a no-op, since this project doesn't do JMH benchmarking; left
+wired in case that changes.
 
 ## Containers
 
@@ -86,44 +83,9 @@ there's nothing to containerize the way there would be for a deployable
 process. Worth revisiting if an example/demo service module gets added
 later.
 
-## Performance
-
-No JMH numbers exist or are planned — a deliberate scope decision, not a
-gap. Correctness and design work come first; ADR-002, ADR-003, and ADR-006
-reason about trade-offs qualitatively instead of from benchmark data. The
-`me.champeau.jmh` plugin and the nightly workflow's benchmark step are
-wired but unused, in case a future milestone changes course.
-
-## Security
-
-Every `*Config` builder validates at build time (fails fast on invalid
-values like `permitsPerSecond <= 0`) rather than silently clamping to a
-default, which could otherwise mask a misconfiguration in production. This
-library is itself a rate-limiting/traffic-control building block, so
-misconfiguration (an unbounded retry policy, a rate limiter with no burst
-ceiling) is a more realistic risk than a classic memory-safety bug — see
-`docs/adr/` for the config-validation and dependency decisions behind that.
-Found a vulnerability or a footgun in a default? Open a GitHub issue or
-email javidanalizada99@gmail.com — this is a personal project, not a
-company with an on-call rotation, so expect a response within a few days,
-not an SLA.
-
 ## Contributing
 
 Solo portfolio project, built with the discipline of a real internal
 library. Before opening a PR: `./gradlew test checkstyleMain checkstyleTest
 spotbugsMain spotbugsTest jacocoTestReport` should all pass locally — CI
-runs the same set. One logical unit of work per commit. Any new mechanism
-gets a short design proposal (algorithm, concurrency model, test plan)
-before implementation — see `docs/instructions/task-02-resilience-traffic-control/`
-in the portfolio workspace for the format used so far.
-
-## Documentation
-
-- `docs/adr/` — architecture decision records
-- `docs/algorithms/` — per-mechanism algorithm write-ups and correctness proofs
-- `docs/design/` — cross-cutting clock and configuration/pattern reasoning
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+runs the same set. One logical unit of work per commit.

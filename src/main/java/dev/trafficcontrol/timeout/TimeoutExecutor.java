@@ -13,8 +13,10 @@ import java.util.function.Supplier;
 
 /**
  * Bounds how long a call is allowed to take. Sync and async go through
- * different mechanisms -- see docs/algorithms/timeout-management.md for
- * why that split is the actual design here, not an accident.
+ * genuinely different mechanisms, not an accident: a sync call already has
+ * a thread blocked waiting for it ({@code Future.get(timeout)} is enough),
+ * while async needs an active {@link TimeoutScheduler} since nothing is
+ * parked waiting to notice the deadline passed.
  */
 public final class TimeoutExecutor implements AutoCloseable {
 

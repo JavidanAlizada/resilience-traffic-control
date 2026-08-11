@@ -1,6 +1,6 @@
 package dev.trafficcontrol.timeout;
 
-/** Which {@link TimeoutScheduler} backs the async path -- see docs/algorithms/timeout-management.md. */
+/** Which {@link TimeoutScheduler} backs the async path. */
 public enum TimeoutAlgorithm {
 
     /** JDK {@code ScheduledThreadPoolExecutor}, O(log n) schedule/cancel. */

@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * GCRA rate limiter. All the state lives in one {@code AtomicLong} — the
  * "theoretical arrival time" — which is what lets admission be a single
- * CAS loop with nothing to pack. Full write-up, including why this beats a
- * packed token bucket, is in docs/algorithms/token-bucket-and-gcra.md.
+ * CAS loop with nothing to pack, unlike a token bucket's separate
+ * tokens/timestamp fields.
  */
 final class GcraRateLimiter extends AbstractRateLimiter {
 

@@ -2,8 +2,8 @@ package dev.trafficcontrol.timeout;
 
 /**
  * Runs {@code onTimeout} once, after {@code delayNanos}, unless cancelled
- * first. The strategy interface behind the three algorithms compared in
- * docs/algorithms/timeout-management.md.
+ * first. The strategy interface behind the three interchangeable scheduler
+ * implementations.
  */
 public interface TimeoutScheduler {
 

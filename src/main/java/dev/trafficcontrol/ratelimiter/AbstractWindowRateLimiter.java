@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Shared rollover logic for the two window-based algorithms — both are
  * "count requests in a rolling one-second window," they just disagree on
  * how much of the previous window still counts, which is the one method
- * left abstract. See docs/algorithms/sliding-window-rate-limiter.md.
+ * left abstract.
  */
 abstract class AbstractWindowRateLimiter extends AbstractRateLimiter {
 

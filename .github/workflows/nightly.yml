@@ -24,11 +24,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Full JMH benchmark matrix
-        # Overrides the fast "smoke" profile defined in build.gradle.kts with
-        # the real thread-count matrix from docs/benchmarks/methodology.md
-        # (1/2/4/8/16/32/64 threads, full warmup/measurement iterations).
-        # No benchmark classes exist yet — this job is a no-op until a later
-        # commit adds the first JMH benchmarks; see PERFORMANCE.md.
+        # Overrides the fast "smoke" profile defined in build.gradle.kts.
+        # No benchmark classes exist -- this job is a no-op. JMH benchmarking
+        # was dropped as a project scope decision; see README.md.
         run: >
           ./gradlew jmh
           -Pjmh.warmupIterations=5
