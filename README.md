@@ -3,9 +3,10 @@
 Traffic-control and fault-tolerance primitives for the JVM, built from first
 principles rather than wrapped around Resilience4j. The point isn't to
 reinvent it — it's to make the algorithms (GCRA, token bucket, a hand-rolled
-timer wheel, and soon circuit-breaker state machines and backoff/jitter) and
-their concurrency/time-semantics reasoning explicit, provable, and
-configurable, instead of hidden behind someone else's library.
+timer wheel, exponential backoff and jitter, and soon circuit-breaker state
+machines) and their concurrency/time-semantics reasoning explicit,
+provable, and configurable, instead of hidden behind someone else's
+library.
 
 **Scope**: four mechanisms built to a genuinely configurable,
 professional-framework bar — Rate Limiter, Timeout Management, Retry
@@ -50,11 +51,54 @@ Three interchangeable `TimeoutScheduler`s back the async path: the JDK's
 `ScheduledThreadPoolExecutor`, one virtual thread per pending timeout, and
 a hand-rolled hashed wheel timer (the flagship — O(1) scheduling).
 
+## Retry Engine
+
+`dev.trafficcontrol.retry` — decorates a call (sync or async) with retry
+behavior: how many attempts, how long to wait between them, and which
+failures are even worth retrying.
+
+```java
+try (RetryExecutor executor = Retries.exponentialBackoff(3, Duration.ofMillis(100), Duration.ofSeconds(10))) {
+    String result = executor.execute(() -> callFlakyDependency());
+}
+```
+
+| Backoff strategy | Formula |
+|---|---|
+| Fixed Delay | constant |
+| Exponential | `min(maxDelay, baseDelay * 2^(attempt-1))` |
+| Full Jitter | `random(0, exponentialCap)` — widest spread, best against retry storms |
+| Equal Jitter | `exponentialCap/2 + random(0, exponentialCap/2)` |
+| Decorrelated Jitter | `min(maxDelay, random(baseDelay, previousDelay * 3))` (AWS's formula) |
+
+The async path doesn't spawn a thread per pending retry — it reuses
+`TimeoutScheduler` from Timeout Management (`scheduleTimeout` is exactly
+the "run this later, cancellable" primitive a delayed retry needs; see
+`RetryEngineDemo` — the demo output shows attempt 1 running on the calling
+thread and later attempts running on the scheduler's background thread,
+never blocking anything).
+
+A retry that's exhausted throws/completes with `RetryExhaustedException`
+carrying every prior attempt's failure via `getSuppressed()` — the JDK's
+own "here's what led up to this" mechanism, not a bespoke accessor.
+
+Runnable usage examples: `src/test/java/dev/trafficcontrol/retry/RetryEngineDemo.java`
+(sync success-after-failures, exhaustion, a non-retryable predicate failing
+fast, and non-blocking async retry) — same idea as the design-patterns
+repo's per-pattern `App.java`, kept in test sources since a library
+shouldn't ship a `main()` demo in its production JAR.
+
 Design patterns are used deliberately, not decoratively: Strategy
-(`RateLimiter`/`TimeoutScheduler` and their implementations, `NanoClock`),
-Template Method (`AbstractWindowRateLimiter`), Builder (`*Config.Builder`),
-Factory Method (`RateLimiterFactory`/`TimeoutExecutorFactory`), Null Object
-(`NoOpRateLimiter`), and Facade (`RateLimiters`).
+(`RateLimiter`/`TimeoutScheduler`/`BackoffStrategy` and their
+implementations, `NanoClock`), Template Method (`AbstractWindowRateLimiter`,
+`AbstractExponentialBackoff`), Decorator (`RetryExecutor`), Builder
+(`*Config.Builder`), Factory Method (`RateLimiterFactory`/
+`TimeoutExecutorFactory`/`RetryExecutorFactory`), Null Object
+(`NoOpRateLimiter`), and Facade (`RateLimiters`/`Retries`). Patterns
+considered and rejected for Retry Engine, and why (Command, Chain of
+Responsibility, a bespoke Observer/listener SPI): each needed a real
+caller in this milestone before being included, not just idiomatic fit in
+the abstract — see the design proposal doc for the reasoning.
 
 ## Build & test
 

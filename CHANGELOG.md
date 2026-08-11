@@ -87,3 +87,26 @@ contributing, in prose. `principal-engineer-portfolio.md`'s Architecture
 Documentation and ADR requirements were revised to match (a single detailed
 README instead of a docs/ tree and formal ADR files) — applies portfolio-
 wide going forward, not just this repo.
+
+### Milestone 3 — Retry Engine
+
+- `dev.trafficcontrol.retry`: `BackoffStrategy` with five implementations
+  (`FixedDelayBackoff`; `ExponentialBackoff`, `FullJitterBackoff`,
+  `EqualJitterBackoff` sharing `AbstractExponentialBackoff`'s Template
+  Method; `DecorrelatedJitterBackoff` standalone, AWS's formula).
+  `RetryExecutor` (Decorator) with sync `execute` (blocks between attempts)
+  and async `executeAsync` (reuses Milestone 2's `TimeoutScheduler` for
+  non-blocking delayed retries instead of a second scheduling primitive).
+  `RetryExhaustedException` carries every prior failure via
+  `getSuppressed()`. `RetryConfig` + `RetryExecutorFactory` + `Retries`
+  facade.
+- Tests: deterministic arithmetic/bounds tests for every `BackoffStrategy`
+  (no clock needed at all), sync/async `RetryExecutor` tests (success,
+  exhaustion, non-retryable predicate fails fast), config validation.
+- `RetryEngineDemo` (`src/test/java`): runnable usage examples, same idea
+  as the design-patterns repo's per-pattern `App.java` — kept out of the
+  production JAR on purpose.
+- README updated with the Retry Engine section and the pattern-selection
+  rationale (Decorator/Template Method included because they have a real
+  caller here; Command/Chain of Responsibility/a bespoke Observer SPI
+  considered and rejected, with reasons).
