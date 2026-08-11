@@ -31,22 +31,19 @@ per milestone, not per commit.
   VarHandle).
 - `AbstractRateLimiter` — shared permit validation, replacing three copies
   of the same check.
-- `ObservableRateLimiter` + `RateLimiterListener` (Decorator + Observer):
-  wraps any `RateLimiter`, reports every admit/reject to listeners.
-  `CountingRateLimiterListener` ships as the one concrete listener, so the
-  SPI isn't only ever implemented by tests.
-- `CompositeRateLimiter` (Composite): AND-composition of several limiters
-  for tiered rate limiting, with the non-atomicity-across-children caveat
-  documented on the class.
 - `NoOpRateLimiter` (Null Object): always-admit limiter for turning rate
   limiting off via config.
 - `RateLimiters` (Facade): one-line entry points for the common cases,
-  tying Factory Method, Builder, Composite, Null Object, and
-  Decorator/Observer together.
+  tying Factory Method, Builder, and Null Object together.
+
+Decorator/Observer and Composite variants were built and then removed —
+not a fit for this milestone's actual scope. See
+docs/design/configuration-and-extensibility.md, "Patterns considered and
+dropped for this milestone."
 
 ### Still open for Milestone 1
 
 JMH benchmark suite (per-call overhead, throughput/p50/p95/p99, allocation
-rate vs. Guava/Resilience4j baselines) and the GitHub remote/push — see
+rate vs. Guava/Resilience4j baselines) — see
 `docs/instructions/task-02-resilience-traffic-control/` in the portfolio
 workspace for what's tracked.

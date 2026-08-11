@@ -35,20 +35,6 @@ public final class RateLimiters {
         return NoOpRateLimiter.INSTANCE;
     }
 
-    /** All of the given limiters must admit — see {@link CompositeRateLimiter}. */
-    public static RateLimiter allOf(RateLimiter... limiters) {
-        return CompositeRateLimiter.allOf(limiters);
-    }
-
-    /** Wraps {@code delegate} so the given listeners hear about every admit/reject. */
-    public static RateLimiter observed(RateLimiter delegate, RateLimiterListener... listeners) {
-        ObservableRateLimiter observable = new ObservableRateLimiter(delegate);
-        for (RateLimiterListener listener : listeners) {
-            observable.addListener(listener);
-        }
-        return observable;
-    }
-
     private static RateLimiterConfig configFor(RateLimiterAlgorithm algorithm, double permitsPerSecond,
             long burstCapacity) {
         return RateLimiterConfig.builder()

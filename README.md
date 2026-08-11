@@ -51,10 +51,8 @@ Design patterns used deliberately, not decoratively — see
 [docs/design/configuration-and-extensibility.md](docs/design/configuration-and-extensibility.md):
 Strategy (`RateLimiter` + its four implementations, `NanoClock`), Template
 Method (`AbstractWindowRateLimiter`), Builder (`RateLimiterConfig.Builder`),
-Factory Method (`RateLimiterFactory`), Decorator + Observer
-(`ObservableRateLimiter` + `RateLimiterListener`), Composite
-(`CompositeRateLimiter`), Null Object (`NoOpRateLimiter`), and Facade
-(`RateLimiters`).
+Factory Method (`RateLimiterFactory`), Null Object (`NoOpRateLimiter`), and
+Facade (`RateLimiters`).
 
 ## Build & test
 

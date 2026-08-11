@@ -1,11 +1,9 @@
 package dev.trafficcontrol.ratelimiter;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class RateLimitersTest {
@@ -33,29 +31,5 @@ class RateLimitersTest {
         assertTrue(limiter.tryAcquire());
         assertTrue(limiter.tryAcquire());
         assertFalse(limiter.tryAcquire());
-    }
-
-    @Test
-    void allOfDelegatesToComposite() {
-        RateLimiter limiter = RateLimiters.allOf(RateLimiters.unlimited(), RateLimiters.gcra(1, 1));
-        assertTrue(limiter.tryAcquire(), "unlimited plus one fresh permit");
-        assertFalse(limiter.tryAcquire(), "the gcra child is now exhausted");
-    }
-
-    @Test
-    void observedWiresListenersToTheDelegate() {
-        AtomicInteger admits = new AtomicInteger();
-        RateLimiter limiter = RateLimiters.observed(RateLimiters.unlimited(),
-                new RateLimiterListener() {
-                    @Override
-                    public void onAdmit(int permits) {
-                        admits.incrementAndGet();
-                    }
-                });
-
-        limiter.tryAcquire();
-        limiter.tryAcquire();
-
-        assertEquals(2, admits.get());
     }
 }
