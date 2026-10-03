@@ -3,8 +3,8 @@
 Traffic-control and fault-tolerance primitives for the JVM, built from first
 principles rather than wrapped around Resilience4j. The point isn't to
 reinvent it — it's to make the algorithms (GCRA, token bucket, a hand-rolled
-timer wheel, exponential backoff and jitter, and soon circuit-breaker state
-machines) and their concurrency/time-semantics reasoning explicit,
+timer wheel, exponential backoff and jitter, a circuit-breaker state machine
+over a lock-free ring buffer) and their concurrency/time-semantics reasoning explicit,
 provable, and configurable, instead of hidden behind someone else's
 library.
 
@@ -88,17 +88,113 @@ fast, and non-blocking async retry) — same idea as the design-patterns
 repo's per-pattern `App.java`, kept in test sources since a library
 shouldn't ship a `main()` demo in its production JAR.
 
-Design patterns are used deliberately, not decoratively: Strategy
-(`RateLimiter`/`TimeoutScheduler`/`BackoffStrategy` and their
-implementations, `NanoClock`), Template Method (`AbstractWindowRateLimiter`,
-`AbstractExponentialBackoff`), Decorator (`RetryExecutor`), Builder
-(`*Config.Builder`), Factory Method (`RateLimiterFactory`/
-`TimeoutExecutorFactory`/`RetryExecutorFactory`), Null Object
-(`NoOpRateLimiter`), and Facade (`RateLimiters`/`Retries`). Patterns
-considered and rejected for Retry Engine, and why (Command, Chain of
-Responsibility, a bespoke Observer/listener SPI): each needed a real
-caller in this milestone before being included, not just idiomatic fit in
-the abstract — see the design proposal doc for the reasoning.
+## Circuit Breaker
+
+`dev.trafficcontrol.circuitbreaker` stops calling a dependency once it's
+clearly unhealthy, rejects calls cheaply while it recovers, then lets a
+bounded number of trial calls through to find out whether it has.
+
+```java
+CircuitBreaker breaker = CircuitBreakers.countBased(100, 50, Duration.ofSeconds(30));
+String result = breaker.execute(() -> callDependency()); // CallNotPermittedException while OPEN
+```
+
+| State | Calls | Leaves when |
+|---|---|---|
+| CLOSED | all go through, outcomes feed the sliding window | failure rate or slow-call rate reaches its threshold, once `minimumNumberOfCalls` are in the window → OPEN |
+| OPEN | all rejected immediately | `waitDurationInOpenState` has passed; the next call moves it → HALF_OPEN |
+| HALF_OPEN | exactly `permittedCallsInHalfOpenState` trial calls | all trial results are in: under both thresholds → CLOSED with an empty window, otherwise → OPEN. Also → OPEN if trials don't report back within `maxWaitDurationInHalfOpenState` |
+
+**One immutable object per state, swapped by CAS.** Each state owns its
+own data (the window, the time it opened, the trial counters) and the
+breaker holds a single `AtomicReference` to the current one. A transition
+replaces the whole object, so no state ever starts with counters left over
+from the previous one. Many threads can cross the threshold at once, but
+only one CAS succeeds, so a trip happens, and is reported, exactly once.
+
+**Count-based window: a lock-free ring buffer.** A writer claims a slot
+with `getAndIncrement`, swaps its outcome in with `getAndSet`, and adjusts
+the running totals by the difference between what it wrote and what it
+actually evicted. Every slot's history is one total order of swaps, so each
+outcome is added once and subtracted once, and when writers go quiet the
+totals equal a recount of the slots. A concurrent test checks exactly that.
+While writers are in flight the three counters can be a call or two out of
+step with each other. That's accepted rather than paid for with a CAS retry
+loop over one packed word, because a trip decision is statistical anyway.
+
+**Time-based window: per-second buckets, behind a lock.** Rolling a bucket
+over to a new second means clearing it while other writers may still be
+adding to it. Doing that lock-free needs either all three counts packed
+into one long with the epoch (too few bits per count) or a fresh bucket
+allocated on every call. A short `synchronized` section is the simpler
+correct answer, and the asymmetry with the count-based window is
+deliberate. Resilience4j locks both.
+
+**Rate-based tripping only.** Tripping on N consecutive failures can't tell
+1 failure in 3 calls from 1 in 3 million, and a single success resets it,
+so a flapping dependency never trips. Failure rate and slow-call rate over
+a window, gated by a minimum call count, are what production breakers
+actually use. A slow call is simply one at or over
+`slowCallDurationThreshold`, independent of whether it succeeded.
+
+**Permits tie a result to the state that admitted the call.** A slow call
+let in while CLOSED can finish after the breaker has moved to HALF_OPEN. If
+it reported to whatever state was current, it would count as a trial call
+it was never part of. Each call gets a single-use permit that reports back
+to the state that issued it, and later reports on the same permit are
+ignored. `execute`/`executeAsync` handle permits for you. An interrupted or
+cancelled call releases its permit instead of counting as a failure, since
+the caller gave up and that says nothing about the dependency.
+
+**No timer thread.** OPEN → HALF_OPEN happens on the first call after the
+wait, so tests drive it with a fake clock and nothing sleeps. The side
+effect: an idle breaker keeps reporting OPEN past its wait until the next
+call arrives.
+
+**Listeners** (`CircuitBreakerConfig.builder().listener(...)`) are told
+about every transition, synchronously, on the thread whose CAS made it, so
+keep them fast. A listener that throws is ignored and can't fail the call
+that triggered the transition. Two limitations: transitions made by
+different threads in quick succession can be reported out of order (each
+event's `from`/`to` says which is which), and an event doesn't say which
+breaker it came from, since breakers have no names yet.
+
+**With Retry, order matters.** `Retry(CircuitBreaker(call))` counts every
+attempt in the breaker. Give the retry a predicate that excludes
+`CallNotPermittedException`, otherwise it spends its remaining attempts on
+rejections once the breaker opens. `CircuitBreaker(Retry(call))` counts a
+whole retry sequence as one call, which hides flakiness from the breaker.
+Both behaviors are pinned down by tests.
+
+Runnable examples: `src/test/java/dev/trafficcontrol/circuitbreaker/CircuitBreakerDemo.java`
+(an outage tripping and recovering, slow calls tripping with zero failures,
+retry stopping at an open breaker, async rejection as a failed future).
+
+## Design patterns
+
+Each pattern is here because something in its milestone calls it, not for
+idiomatic fit in the abstract:
+
+- **Strategy**: `RateLimiter`, `TimeoutScheduler`, `BackoffStrategy`,
+  the circuit breaker's sliding window, and `NanoClock`.
+- **Template Method**: `AbstractWindowRateLimiter`, `AbstractExponentialBackoff`.
+- **Decorator**: `RetryExecutor`, and the breaker's `execute`/`executeAsync`.
+- **State**: the circuit breaker's CLOSED / OPEN / HALF_OPEN objects.
+- **Observer**: circuit breaker transition listeners.
+- **Builder**: every `*Config.Builder`.
+- **Factory Method**: `RateLimiterFactory`, `TimeoutExecutorFactory`,
+  `RetryExecutorFactory`, `CircuitBreakerFactory`.
+- **Facade**: `RateLimiters`, `Retries`, `CircuitBreakers`.
+- **Null Object**: `NoOpRateLimiter`.
+- Not from the GoF book: **Balking** (an OPEN breaker refuses immediately
+  instead of waiting), **Value Object** (`CircuitBreakerMetrics`,
+  `StateTransitionEvent`, `Deadline`), and a **ring buffer** for the
+  count-based window.
+
+Considered and left out, for lack of a caller: Composite and an
+Observer-style metrics SPI for the rate limiter (built, then reverted),
+Command and Chain of Responsibility for retry, and Health Check, Null
+Object and manual force-open/reset controls for the circuit breaker.
 
 ## Build & test
 

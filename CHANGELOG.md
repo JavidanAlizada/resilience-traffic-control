@@ -110,3 +110,54 @@ wide going forward, not just this repo.
   rationale (Decorator/Template Method included because they have a real
   caller here; Command/Chain of Responsibility/a bespoke Observer SPI
   considered and rejected, with reasons).
+
+### Milestone 4 — Circuit Breaker
+
+- `dev.trafficcontrol.circuitbreaker`: CLOSED / OPEN / HALF_OPEN as one
+  immutable State object each, swapped by CAS on a single
+  `AtomicReference`, so a transition happens exactly once and never leaves
+  stale counters behind. Rate-based tripping (failure rate and slow-call
+  rate, gated by `minimumNumberOfCalls`); consecutive-failure tripping
+  deliberately not offered.
+- Two sliding windows behind one interface: count-based (default), a
+  lock-free ring buffer whose running totals provably equal a recount of
+  its slots once writers go quiet, and time-based, with per-second buckets
+  behind a lock.
+- Single-use permits that report to the state that admitted the call, so
+  a late result can't pollute the next state's statistics. HALF_OPEN
+  admits exactly N trial calls (decrement-if-positive CAS), with
+  `maxWaitDurationInHalfOpenState` against trial calls that never report
+  back. OPEN → HALF_OPEN happens on the next call, with no timer thread.
+- `execute` / `executeAsync`: interruption, cancellation and `Error`s
+  release the permit instead of counting as dependency failures. An async
+  rejection is a failed future, not a throw.
+- State-transition listeners (Observer), synchronous on the thread that
+  won the CAS. A throwing listener is ignored.
+- `CircuitBreakerConfig` (validating builder, Resilience4j-like defaults
+  except a 60 s HALF_OPEN max wait), `CircuitBreakerFactory`,
+  `CircuitBreakers` facade, `CallNotPermittedException` (unchecked, so a
+  retry predicate can exclude it).
+- Tests, all against a fake clock with no sleeps:
+  - unit tests for every transition and timing edge
+  - 32-thread concurrent tests: HALF_OPEN admits exactly N; exactly one
+    transition event under contention; no call lost or double-counted
+  - a randomized property test checking the breaker against a simple
+    reference model over 500 × 200 random steps
+  - end-to-end failure injection: outage, slow dependency, recovery
+  - Retry composition in both orders
+- `CircuitBreakerDemo` (`src/test/java`), run and checked.
+- README: Circuit Breaker section, plus a single Design patterns section
+  covering all four mechanisms.
+
+Deferred, as with earlier milestones: 64-thread stress, soak tests, and the
+healthy / degraded / recovering workload simulations.
+
+### Scope note — Phase 1 closes at Milestone 4
+
+The four mechanisms are done. Milestone 5 (generalized configuration
+engine: registries, external config files, hot reload, a composability /
+ordering layer) and Milestone 6 (benchmark suite, final review) are
+deferred, not dropped. Work moves on to the next portfolio project, the
+RPC framework, which is expected to use this library for its retries,
+deadlines and circuit breaking. Hand-wired composition, tested in both
+orders, covers the immediate need in the meantime.
