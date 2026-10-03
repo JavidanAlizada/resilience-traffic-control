@@ -2,6 +2,8 @@ package dev.trafficcontrol.circuitbreaker;
 
 import dev.trafficcontrol.ratelimiter.NanoClock;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -27,6 +29,7 @@ public final class CircuitBreakerConfig {
     private final Duration maxWaitDurationInHalfOpenState;
     private final Predicate<Throwable> failurePredicate;
     private final NanoClock clock;
+    private final List<CircuitBreakerListener> listeners;
 
     private CircuitBreakerConfig(Builder builder, int minimumNumberOfCalls) {
         this.failureRateThreshold = builder.failureRateThreshold;
@@ -40,6 +43,7 @@ public final class CircuitBreakerConfig {
         this.maxWaitDurationInHalfOpenState = builder.maxWaitDurationInHalfOpenState;
         this.failurePredicate = builder.failurePredicate;
         this.clock = builder.clock;
+        this.listeners = List.copyOf(builder.listeners);
     }
 
     /** Percentage in (0, 100]: trip when at least this share of calls in the window failed. */
@@ -91,6 +95,11 @@ public final class CircuitBreakerConfig {
         return clock;
     }
 
+    /** Unmodifiable, in registration order. */
+    public List<CircuitBreakerListener> listeners() {
+        return listeners;
+    }
+
     public static CircuitBreakerConfig ofDefaults() {
         return builder().build();
     }
@@ -112,6 +121,7 @@ public final class CircuitBreakerConfig {
         private Duration maxWaitDurationInHalfOpenState = Duration.ofSeconds(60);
         private Predicate<Throwable> failurePredicate = failure -> true;
         private NanoClock clock = NanoClock.SYSTEM;
+        private final List<CircuitBreakerListener> listeners = new ArrayList<>();
 
         private Builder() {
         }
@@ -174,6 +184,12 @@ public final class CircuitBreakerConfig {
 
         public Builder clock(NanoClock clock) {
             this.clock = Objects.requireNonNull(clock, "clock");
+            return this;
+        }
+
+        /** Adds a listener; call once per listener. Every breaker built from this config notifies all of them. */
+        public Builder listener(CircuitBreakerListener listener) {
+            listeners.add(Objects.requireNonNull(listener, "listener"));
             return this;
         }
 

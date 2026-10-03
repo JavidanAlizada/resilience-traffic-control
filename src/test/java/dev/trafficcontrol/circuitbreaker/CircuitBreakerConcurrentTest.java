@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,6 +30,8 @@ class CircuitBreakerConcurrentTest {
 
     private final FakeClock clock = new FakeClock(0);
 
+    private final List<StateTransitionEvent> events = new CopyOnWriteArrayList<>();
+
     private CircuitBreaker breaker(int windowSize, int permittedInHalfOpen) {
         return CircuitBreakers.of(CircuitBreakerConfig.builder()
                 .slidingWindowSize(windowSize)
@@ -37,6 +40,7 @@ class CircuitBreakerConcurrentTest {
                 .permittedCallsInHalfOpenState(permittedInHalfOpen)
                 .maxWaitDurationInHalfOpenState(Duration.ZERO)
                 .clock(clock)
+                .listener(events::add)
                 .build());
     }
 
@@ -143,6 +147,39 @@ class CircuitBreakerConcurrentTest {
         assertEquals(THREADS * attemptsPerThread, ran.get() + rejected.get());
         assertEquals(ran.get(), rethrown.get(), "every call that ran surfaced its own failure");
         assertTrue(ran.get() >= windowSize, "needed a full window of failures to trip, ran " + ran.get());
+    }
+
+    @RepeatedTest(5)
+    void manyThreadsCrossingTheThresholdTripExactlyOnce() throws InterruptedException {
+        CircuitBreaker breaker = breaker(100, 10);
+
+        runConcurrently(() -> {
+            for (int i = 0; i < 100; i++) {
+                try {
+                    breaker.acquirePermission().onFailure(0, new IOException());
+                } catch (CallNotPermittedException e) {
+                    // expected once the breaker has opened
+                }
+            }
+        });
+
+        assertEquals(List.of(new StateTransitionEvent(CLOSED, OPEN, 0)), events);
+    }
+
+    @RepeatedTest(5)
+    void manyThreadsLeavingOpenAtOnceProduceOneHalfOpenTransition() throws InterruptedException {
+        CircuitBreaker breaker = breaker(10, 1_000);
+        trip(breaker, 10);
+        clock.advance(WAIT_NANOS);
+        events.clear();
+
+        runConcurrently(() -> {
+            for (int i = 0; i < 10; i++) {
+                breaker.acquirePermission();
+            }
+        });
+
+        assertEquals(List.of(new StateTransitionEvent(OPEN, HALF_OPEN, WAIT_NANOS)), events);
     }
 
     private static List<CircuitBreaker.Permit> acquireAll(CircuitBreaker breaker, int count) {

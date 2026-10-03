@@ -1,6 +1,7 @@
 package dev.trafficcontrol.circuitbreaker;
 
 import dev.trafficcontrol.ratelimiter.NanoClock;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -22,6 +23,7 @@ final class DefaultCircuitBreaker implements CircuitBreaker {
     private final long slowCallNanos;
     private final long waitInOpenNanos;
     private final long maxWaitInHalfOpenNanos;
+    private final List<CircuitBreakerListener> listeners;
     private final AtomicReference<BreakerState> state;
 
     DefaultCircuitBreaker(CircuitBreakerConfig config, Supplier<SlidingWindow> windowFactory) {
@@ -31,6 +33,7 @@ final class DefaultCircuitBreaker implements CircuitBreaker {
         this.slowCallNanos = config.slowCallDurationThreshold().toNanos();
         this.waitInOpenNanos = config.waitDurationInOpenState().toNanos();
         this.maxWaitInHalfOpenNanos = config.maxWaitDurationInHalfOpenState().toNanos();
+        this.listeners = config.listeners();
         this.state = new AtomicReference<>(new ClosedState(windowFactory.get()));
     }
 
@@ -116,9 +119,26 @@ final class DefaultCircuitBreaker implements CircuitBreaker {
         return state.get();
     }
 
-    /** True only for the one thread whose CAS moved the breaker from "from" to "to". */
+    /** True only for the one thread whose CAS moved the breaker from "from" to "to"; that thread notifies listeners. */
     boolean transition(BreakerState from, BreakerState to) {
-        return state.compareAndSet(from, to);
+        if (!state.compareAndSet(from, to)) {
+            return false;
+        }
+        if (!listeners.isEmpty()) {
+            notifyListeners(new StateTransitionEvent(from.name(), to.name(), now()));
+        }
+        return true;
+    }
+
+    private void notifyListeners(StateTransitionEvent event) {
+        for (CircuitBreakerListener listener : listeners) {
+            try {
+                listener.onStateTransition(event);
+            } catch (RuntimeException ignored) {
+                // expected: a broken listener must not fail the call that happened to trigger the
+                // transition, or stop the listeners after it from hearing about it.
+            }
+        }
     }
 
     boolean exceedsThresholds(WindowSnapshot snapshot) {
