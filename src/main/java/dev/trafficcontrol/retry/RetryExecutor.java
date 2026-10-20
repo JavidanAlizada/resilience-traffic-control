@@ -62,6 +62,10 @@ public final class RetryExecutor implements AutoCloseable {
 
     private <T> void attemptAsync(Supplier<CompletableFuture<T>> call, CompletableFuture<T> result, int attempt,
             Duration previousDelay, List<Throwable> priorFailures) {
+        // The caller may have cancelled (or otherwise completed) the result during the backoff: no more attempts.
+        if (result.isDone()) {
+            return;
+        }
         call.get().whenComplete((value, error) -> {
             if (error == null) {
                 result.complete(value);

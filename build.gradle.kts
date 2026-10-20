@@ -7,10 +7,12 @@ plugins {
     jacoco
     id("com.github.spotbugs") version "6.0.26"
     id("me.champeau.jmh") version "0.7.2"
+    `maven-publish`
 }
 
-group = "dev.trafficcontrol"
-version = "0.1.0-SNAPSHOT"
+// JitPack passes its own coordinates (jitpack.yml); local builds use these.
+group = providers.gradleProperty("publishGroup").getOrElse("dev.trafficcontrol")
+version = providers.gradleProperty("publishVersion").getOrElse("0.4.0-SNAPSHOT")
 
 java {
     toolchain {
@@ -36,6 +38,16 @@ tasks.test {
     useJUnitPlatform()
     maxHeapSize = "1g"
     jvmArgs("-XX:+UseParallelGC")
+}
+
+// JitPack builds this repo on demand (see jitpack.yml) and serves it as
+// com.github.JavidanAlizada:resilience-traffic-control:<commit or tag>.
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
 }
 
 jacoco {

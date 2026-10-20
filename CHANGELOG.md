@@ -6,6 +6,15 @@ per milestone, not per commit.
 
 ## [Unreleased]
 
+### Fixes and publishing (for nio-rpc-framework)
+
+- Fixed: `RetryExecutor.executeAsync` scheduled the next attempt even when
+  its result had been cancelled during the backoff, so a cancelled call
+  still made one more attempt. It now stops once the result is complete.
+- Published through JitPack (`maven-publish`, `jitpack.yml` on JDK 21):
+  `com.github.JavidanAlizada:resilience-traffic-control:<commit>`. No tag
+  yet; consumers pin a commit.
+
 ### Milestone 1 — Rate Limiter (in progress)
 
 - Gradle build scaffolding: Java 21 toolchain, Checkstyle, SpotBugs, JaCoCo,
